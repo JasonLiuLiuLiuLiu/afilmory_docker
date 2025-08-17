@@ -1,16 +1,16 @@
-name: 构建并推送Docker镜像
+name: Build and Push Docker Image
 
-# 手动触发
+# Manual trigger
 on:
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Docker镜像标签 (默认: latest)'
+        description: 'Docker image tag (default: latest)'
         required: false
         default: 'latest'
         type: string
       deploy:
-        description: '是否部署到VPS服务器'
+        description: 'Deploy to VPS server'
         required: false
         default: false
         type: boolean
@@ -27,10 +27,10 @@ jobs:
       packages: write
 
     steps:
-      - name: 检出代码
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: 创建.env文件
+      - name: Create .env file
         run: |
           cat > .env << EOF
           S3_REGION=${{ secrets.S3_REGION || 'us-east-1' }}
@@ -42,7 +42,7 @@ jobs:
           S3_CUSTOM_DOMAIN=${{ secrets.S3_CUSTOM_DOMAIN }}
           EOF
           
-          # 添加可选的环境变量
+          # Add optional environment variables
           if [ -n "${{ secrets.GIT_TOKEN }}" ]; then
             echo "GIT_TOKEN=${{ secrets.GIT_TOKEN }}" >> .env
           fi
@@ -51,88 +51,88 @@ jobs:
             echo "PG_CONNECTION_STRING=${{ secrets.PG_CONNECTION_STRING }}" >> .env
           fi
           
-          echo "✅ .env文件已创建"
-          echo "包含的环境变量:"
+          echo "✅ .env file created"
+          echo "Environment variables included:"
           grep -E "^[A-Z_]+" .env | cut -d'=' -f1 | sort
 
-      - name: 更新builder.config.json配置
+      - name: Update builder.config.json configuration
         run: |
-          # 读取当前的builder.config.json
+          # Read current builder.config.json
           current_config=$(cat builder.config.json)
           
-          # 使用jq更新配置，如果secrets存在的话
+          # Update configuration using jq if secrets exist
           updated_config="$current_config"
           
-          # 更新存储桶名称（如果提供）
+          # Update bucket name (if provided)
           if [ -n "${{ secrets.STORAGE_BUCKET }}" ]; then
             updated_config=$(echo "$updated_config" | jq '.storage.bucket = "${{ secrets.STORAGE_BUCKET }}"')
           fi
           
-          # 更新自定义域名（如果提供）
+          # Update custom domain (if provided)
           if [ -n "${{ secrets.STORAGE_CUSTOM_DOMAIN }}" ]; then
             updated_config=$(echo "$updated_config" | jq '.storage.customDomain = "${{ secrets.STORAGE_CUSTOM_DOMAIN }}"')
           fi
           
-          # 更新存储区域（如果提供）
+          # Update storage region (if provided)
           if [ -n "${{ secrets.STORAGE_REGION }}" ]; then
             updated_config=$(echo "$updated_config" | jq '.storage.region = "${{ secrets.STORAGE_REGION }}"')
           fi
           
-          # 更新存储前缀（如果提供）
+          # Update storage prefix (if provided)
           if [ -n "${{ secrets.STORAGE_PREFIX }}" ]; then
             updated_config=$(echo "$updated_config" | jq '.storage.prefix = "${{ secrets.STORAGE_PREFIX }}"')
           fi
           
-          # 更新仓库URL（如果提供）
+          # Update repository URL (if provided)
           if [ -n "${{ secrets.REPO_URL }}" ]; then
             updated_config=$(echo "$updated_config" | jq '.repo.url = "${{ secrets.REPO_URL }}"')
           fi
           
-          # 更新仓库启用状态（如果提供）
+          # Update repository enable status (if provided)
           if [ -n "${{ secrets.REPO_ENABLE }}" ]; then
             updated_config=$(echo "$updated_config" | jq '.repo.enable = (${{ secrets.REPO_ENABLE }} | test("true"; "i"))')
           fi
           
-          # 写入更新后的配置
+          # Write updated configuration
           echo "$updated_config" > builder.config.json
-          echo "✅ builder.config.json已更新"
-          echo "当前配置:"
+          echo "✅ builder.config.json updated"
+          echo "Current configuration:"
           cat builder.config.json | jq .
 
-      - name: 更新config.json配置
+      - name: Update config.json configuration
         run: |
-          # 读取当前的config.json
+          # Read current config.json
           current_config=$(cat config.json)
           
-          # 使用jq更新配置，如果secrets存在的话
+          # Update configuration using jq if secrets exist
           updated_config="$current_config"
           
-          # 更新网站名称（如果提供）
+          # Update site name (if provided)
           if [ -n "${{ secrets.SITE_NAME }}" ]; then
             updated_config=$(echo "$updated_config" | jq '.name = "${{ secrets.SITE_NAME }}"')
           fi
           
-          # 更新网站标题（如果提供）
+          # Update site title (if provided)
           if [ -n "${{ secrets.SITE_TITLE }}" ]; then
             updated_config=$(echo "$updated_config" | jq '.title = "${{ secrets.SITE_TITLE }}"')
           fi
           
-          # 更新网站描述（如果提供）
+          # Update site description (if provided)
           if [ -n "${{ secrets.SITE_DESCRIPTION }}" ]; then
             updated_config=$(echo "$updated_config" | jq '.description = "${{ secrets.SITE_DESCRIPTION }}"')
           fi
           
-          # 更新网站URL（如果提供）
+          # Update site URL (if provided)
           if [ -n "${{ secrets.SITE_URL }}" ]; then
             updated_config=$(echo "$updated_config" | jq '.url = "${{ secrets.SITE_URL }}"')
           fi
           
-          # 更新主题色（如果提供）
+          # Update accent color (if provided)
           if [ -n "${{ secrets.ACCENT_COLOR }}" ]; then
             updated_config=$(echo "$updated_config" | jq '.accentColor = "${{ secrets.ACCENT_COLOR }}"')
           fi
           
-          # 更新作者信息（如果提供）
+          # Update author information (if provided)
           if [ -n "${{ secrets.AUTHOR_NAME }}" ]; then
             updated_config=$(echo "$updated_config" | jq '.author.name = "${{ secrets.AUTHOR_NAME }}"')
           fi
@@ -145,28 +145,28 @@ jobs:
             updated_config=$(echo "$updated_config" | jq '.author.avatar = "${{ secrets.AUTHOR_AVATAR }}"')
           fi
           
-          # 更新社交媒体（如果提供）
+          # Update social media (if provided)
           if [ -n "${{ secrets.TWITTER_HANDLE }}" ]; then
             updated_config=$(echo "$updated_config" | jq '.social.twitter = "${{ secrets.TWITTER_HANDLE }}"')
           fi
           
-          # 写入更新后的配置
+          # Write updated configuration
           echo "$updated_config" > config.json
-          echo "✅ config.json已更新"
-          echo "当前配置:"
+          echo "✅ config.json updated"
+          echo "Current configuration:"
           cat config.json | jq .
 
-      - name: 设置Docker Buildx
+      - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: 登录到GitHub Container Registry
+      - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: 提取镜像元数据
+      - name: Extract image metadata
         id: meta
         uses: docker/metadata-action@v5
         with:
@@ -176,7 +176,7 @@ jobs:
             type=raw,value=build-${{ github.run_number }}
             type=sha,prefix={{branch}}-
 
-      - name: 构建并推送Docker镜像
+      - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -197,16 +197,16 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: 构建完成通知
+      - name: Build completion notification
         run: |
-          echo "🎉 Docker镜像构建成功！"
-          echo "📦 镜像标签: ${{ steps.meta.outputs.tags }}"
-          echo "🔗 镜像地址: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:${{ inputs.tag || 'latest' }}"
+          echo "🎉 Docker image built successfully!"
+          echo "📦 Image tags: ${{ steps.meta.outputs.tags }}"
+          echo "🔗 Image URL: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:${{ inputs.tag || 'latest' }}"
           echo ""
-          echo "🚀 使用以下命令运行容器:"
+          echo "🚀 Run container with the following command:"
           echo "docker run -p 3000:3000 ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:${{ inputs.tag || 'latest' }}"
 
-      - name: 部署到VPS服务器
+      - name: Deploy to VPS server
         if: ${{ inputs.deploy == true }}
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -217,41 +217,41 @@ jobs:
           script: |
             set -e
             
-            # 设置变量
+            # Set variables
             IMAGE_NAME="${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}"
             TAG="${{ inputs.tag || 'latest' }}"
             CONTAINER_NAME="pic-gallery"
             CONTAINER_PORT="3000"
             HOST_PORT="${{ secrets.VPS_HOST_PORT || '3000' }}"
             
-            echo "🚀 开始部署到VPS服务器..."
-            echo "📦 镜像: ${IMAGE_NAME}:${TAG}"
-            echo "🔌 端口映射: ${HOST_PORT}:${CONTAINER_PORT}"
+            echo "🚀 Starting deployment to VPS server..."
+            echo "📦 Image: ${IMAGE_NAME}:${TAG}"
+            echo "🔌 Port mapping: ${HOST_PORT}:${CONTAINER_PORT}"
             
-            # 登录到GitHub Container Registry
+            # Login to GitHub Container Registry
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin
             
-            # 停止并删除旧容器（如果存在）
+            # Stop and remove old container (if exists)
             if docker ps -q -f name=${CONTAINER_NAME} | grep -q .; then
-              echo "🛑 停止旧容器..."
+              echo "🛑 Stopping old container..."
               docker stop ${CONTAINER_NAME}
             fi
             
             if docker ps -a -q -f name=${CONTAINER_NAME} | grep -q .; then
-              echo "🗑️ 删除旧容器..."
+              echo "🗑️ Removing old container..."
               docker rm ${CONTAINER_NAME}
             fi
             
-            # 拉取最新镜像
-            echo "⬇️ 拉取新镜像..."
+            # Pull latest image
+            echo "⬇️ Pulling new image..."
             docker pull ${IMAGE_NAME}:${TAG}
             
-            # 清理旧镜像（保留最新的）
-            echo "🧹 清理旧镜像..."
+            # Clean up old images (keep latest)
+            echo "🧹 Cleaning up old images..."
             docker image prune -f
             
-            # 运行新容器
-            echo "🏃 启动新容器..."
+            # Run new container
+            echo "🏃 Starting new container..."
             docker run -d \
               --name ${CONTAINER_NAME} \
               --restart always \
@@ -259,25 +259,25 @@ jobs:
               -e NODE_ENV=production \
               ${IMAGE_NAME}:${TAG}
             
-            # 检查容器状态
+            # Check container status
             sleep 5
             if docker ps -q -f name=${CONTAINER_NAME} | grep -q .; then
-              echo "✅ 容器启动成功！"
-              echo "🌐 服务地址: http://${{ secrets.VPS_HOST }}:${HOST_PORT}"
+              echo "✅ Container started successfully!"
+              echo "🌐 Service URL: http://${{ secrets.VPS_HOST }}:${HOST_PORT}"
             else
-              echo "❌ 容器启动失败！"
-              echo "📋 容器日志:"
+              echo "❌ Container failed to start!"
+              echo "📋 Container logs:"
               docker logs ${CONTAINER_NAME}
               exit 1
             fi
 
-      - name: 部署完成通知
+      - name: Deployment completion notification
         if: ${{ inputs.deploy == true }}
         run: |
-          echo "🎊 部署完成！"
-          echo "🌐 服务地址: http://${{ secrets.VPS_HOST }}:${{ secrets.VPS_HOST_PORT || '3000' }}"
-          echo "📊 容器状态: 运行中"
-          echo "🔧 管理命令:"
-          echo "  查看日志: docker logs pic-gallery"
-          echo "  重启服务: docker restart pic-gallery"
-          echo "  停止服务: docker stop pic-gallery"
+          echo "🎊 Deployment completed!"
+          echo "🌐 Service URL: http://${{ secrets.VPS_HOST }}:${{ secrets.VPS_HOST_PORT || '3000' }}"
+          echo "📊 Container status: Running"
+          echo "🔧 Management commands:"
+          echo "  View logs: docker logs pic-gallery"
+          echo "  Restart service: docker restart pic-gallery"
+          echo "  Stop service: docker stop pic-gallery"
