@@ -9,6 +9,11 @@ on:
         required: false
         default: 'latest'
         type: string
+      deploy:
+        description: '是否部署到VPS服务器'
+        required: false
+        default: false
+        type: boolean
 
 env:
   REGISTRY: ghcr.io
@@ -200,3 +205,79 @@ jobs:
           echo ""
           echo "🚀 使用以下命令运行容器:"
           echo "docker run -p 3000:3000 ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:${{ inputs.tag || 'latest' }}"
+
+      - name: 部署到VPS服务器
+        if: ${{ inputs.deploy == true }}
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT || 22 }}
+          script: |
+            set -e
+            
+            # 设置变量
+            IMAGE_NAME="${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}"
+            TAG="${{ inputs.tag || 'latest' }}"
+            CONTAINER_NAME="pic-gallery"
+            CONTAINER_PORT="3000"
+            HOST_PORT="${{ secrets.VPS_HOST_PORT || '3000' }}"
+            
+            echo "🚀 开始部署到VPS服务器..."
+            echo "📦 镜像: ${IMAGE_NAME}:${TAG}"
+            echo "🔌 端口映射: ${HOST_PORT}:${CONTAINER_PORT}"
+            
+            # 登录到GitHub Container Registry
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin
+            
+            # 停止并删除旧容器（如果存在）
+            if docker ps -q -f name=${CONTAINER_NAME} | grep -q .; then
+              echo "🛑 停止旧容器..."
+              docker stop ${CONTAINER_NAME}
+            fi
+            
+            if docker ps -a -q -f name=${CONTAINER_NAME} | grep -q .; then
+              echo "🗑️ 删除旧容器..."
+              docker rm ${CONTAINER_NAME}
+            fi
+            
+            # 拉取最新镜像
+            echo "⬇️ 拉取新镜像..."
+            docker pull ${IMAGE_NAME}:${TAG}
+            
+            # 清理旧镜像（保留最新的）
+            echo "🧹 清理旧镜像..."
+            docker image prune -f
+            
+            # 运行新容器
+            echo "🏃 启动新容器..."
+            docker run -d \
+              --name ${CONTAINER_NAME} \
+              --restart always \
+              -p ${HOST_PORT}:${CONTAINER_PORT} \
+              -e NODE_ENV=production \
+              ${IMAGE_NAME}:${TAG}
+            
+            # 检查容器状态
+            sleep 5
+            if docker ps -q -f name=${CONTAINER_NAME} | grep -q .; then
+              echo "✅ 容器启动成功！"
+              echo "🌐 服务地址: http://${{ secrets.VPS_HOST }}:${HOST_PORT}"
+            else
+              echo "❌ 容器启动失败！"
+              echo "📋 容器日志:"
+              docker logs ${CONTAINER_NAME}
+              exit 1
+            fi
+
+      - name: 部署完成通知
+        if: ${{ inputs.deploy == true }}
+        run: |
+          echo "🎊 部署完成！"
+          echo "🌐 服务地址: http://${{ secrets.VPS_HOST }}:${{ secrets.VPS_HOST_PORT || '3000' }}"
+          echo "📊 容器状态: 运行中"
+          echo "🔧 管理命令:"
+          echo "  查看日志: docker logs pic-gallery"
+          echo "  重启服务: docker restart pic-gallery"
+          echo "  停止服务: docker stop pic-gallery"

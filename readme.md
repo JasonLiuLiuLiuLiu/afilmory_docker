@@ -130,13 +130,25 @@ services:
    - 进入仓库的 `Actions` 标签页
    - 选择 `构建并推送Docker镜像` 工作流
    - 点击 `Run workflow` 按钮
-   - 等待构建完成
+   - 可选择：
+     - 🏷️ Docker镜像标签（默认：latest）
+     - 🚀 是否部署到VPS服务器
+   - 等待构建（和部署）完成
 
-4. **使用构建的镜像**
+4. **部署选项**
+
+   **方式A：仅构建镜像**
+   - 保持"是否部署到VPS服务器"为关闭状态
+   - 手动使用构建的镜像：
    ```bash
    docker pull ghcr.io/[your-username]/pic_pigsbig:latest
    docker run -p 3000:3000 ghcr.io/[your-username]/pic_pigsbig:latest
    ```
+
+   **方式B：自动部署到VPS**
+   - 配置VPS相关的GitHub Secrets（详见配置指南）
+   - 勾选"是否部署到VPS服务器"
+   - 系统自动完成：构建 → 推送 → 部署
 
 #### 优势：
 - ✅ 全自动化构建流程
@@ -144,6 +156,9 @@ services:
 - ✅ 支持多架构（amd64/arm64）
 - ✅ 构建缓存优化
 - ✅ 版本管理和标签
+- 🚀 **新增**：一键部署到VPS服务器
+- 🔄 **新增**：自动容器更新和重启（always策略）
+- 🛡️ **新增**：零停机时间部署
 
 详细配置说明请查看：[GitHub Secrets配置指南](./github-secrets-setup.md)
 
