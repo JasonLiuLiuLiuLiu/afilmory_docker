@@ -1,0 +1,202 @@
+name: 构建并推送Docker镜像
+
+# 手动触发
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Docker镜像标签 (默认: latest)'
+        required: false
+        default: 'latest'
+        type: string
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: pic_pigsbig
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 创建.env文件
+        run: |
+          cat > .env << EOF
+          S3_REGION=${{ secrets.S3_REGION || 'us-east-1' }}
+          S3_ACCESS_KEY_ID=${{ secrets.S3_ACCESS_KEY_ID }}
+          S3_SECRET_ACCESS_KEY=${{ secrets.S3_SECRET_ACCESS_KEY }}
+          S3_BUCKET_NAME=${{ secrets.S3_BUCKET_NAME }}
+          S3_PREFIX=${{ secrets.S3_PREFIX || 'img' }}
+          S3_ENDPOINT=${{ secrets.S3_ENDPOINT }}
+          S3_CUSTOM_DOMAIN=${{ secrets.S3_CUSTOM_DOMAIN }}
+          EOF
+          
+          # 添加可选的环境变量
+          if [ -n "${{ secrets.GIT_TOKEN }}" ]; then
+            echo "GIT_TOKEN=${{ secrets.GIT_TOKEN }}" >> .env
+          fi
+          
+          if [ -n "${{ secrets.PG_CONNECTION_STRING }}" ]; then
+            echo "PG_CONNECTION_STRING=${{ secrets.PG_CONNECTION_STRING }}" >> .env
+          fi
+          
+          echo "✅ .env文件已创建"
+          echo "包含的环境变量:"
+          grep -E "^[A-Z_]+" .env | cut -d'=' -f1 | sort
+
+      - name: 更新builder.config.json配置
+        run: |
+          # 读取当前的builder.config.json
+          current_config=$(cat builder.config.json)
+          
+          # 使用jq更新配置，如果secrets存在的话
+          updated_config="$current_config"
+          
+          # 更新存储桶名称（如果提供）
+          if [ -n "${{ secrets.STORAGE_BUCKET }}" ]; then
+            updated_config=$(echo "$updated_config" | jq '.storage.bucket = "${{ secrets.STORAGE_BUCKET }}"')
+          fi
+          
+          # 更新自定义域名（如果提供）
+          if [ -n "${{ secrets.STORAGE_CUSTOM_DOMAIN }}" ]; then
+            updated_config=$(echo "$updated_config" | jq '.storage.customDomain = "${{ secrets.STORAGE_CUSTOM_DOMAIN }}"')
+          fi
+          
+          # 更新存储区域（如果提供）
+          if [ -n "${{ secrets.STORAGE_REGION }}" ]; then
+            updated_config=$(echo "$updated_config" | jq '.storage.region = "${{ secrets.STORAGE_REGION }}"')
+          fi
+          
+          # 更新存储前缀（如果提供）
+          if [ -n "${{ secrets.STORAGE_PREFIX }}" ]; then
+            updated_config=$(echo "$updated_config" | jq '.storage.prefix = "${{ secrets.STORAGE_PREFIX }}"')
+          fi
+          
+          # 更新仓库URL（如果提供）
+          if [ -n "${{ secrets.REPO_URL }}" ]; then
+            updated_config=$(echo "$updated_config" | jq '.repo.url = "${{ secrets.REPO_URL }}"')
+          fi
+          
+          # 更新仓库启用状态（如果提供）
+          if [ -n "${{ secrets.REPO_ENABLE }}" ]; then
+            updated_config=$(echo "$updated_config" | jq '.repo.enable = (${{ secrets.REPO_ENABLE }} | test("true"; "i"))')
+          fi
+          
+          # 写入更新后的配置
+          echo "$updated_config" > builder.config.json
+          echo "✅ builder.config.json已更新"
+          echo "当前配置:"
+          cat builder.config.json | jq .
+
+      - name: 更新config.json配置
+        run: |
+          # 读取当前的config.json
+          current_config=$(cat config.json)
+          
+          # 使用jq更新配置，如果secrets存在的话
+          updated_config="$current_config"
+          
+          # 更新网站名称（如果提供）
+          if [ -n "${{ secrets.SITE_NAME }}" ]; then
+            updated_config=$(echo "$updated_config" | jq '.name = "${{ secrets.SITE_NAME }}"')
+          fi
+          
+          # 更新网站标题（如果提供）
+          if [ -n "${{ secrets.SITE_TITLE }}" ]; then
+            updated_config=$(echo "$updated_config" | jq '.title = "${{ secrets.SITE_TITLE }}"')
+          fi
+          
+          # 更新网站描述（如果提供）
+          if [ -n "${{ secrets.SITE_DESCRIPTION }}" ]; then
+            updated_config=$(echo "$updated_config" | jq '.description = "${{ secrets.SITE_DESCRIPTION }}"')
+          fi
+          
+          # 更新网站URL（如果提供）
+          if [ -n "${{ secrets.SITE_URL }}" ]; then
+            updated_config=$(echo "$updated_config" | jq '.url = "${{ secrets.SITE_URL }}"')
+          fi
+          
+          # 更新主题色（如果提供）
+          if [ -n "${{ secrets.ACCENT_COLOR }}" ]; then
+            updated_config=$(echo "$updated_config" | jq '.accentColor = "${{ secrets.ACCENT_COLOR }}"')
+          fi
+          
+          # 更新作者信息（如果提供）
+          if [ -n "${{ secrets.AUTHOR_NAME }}" ]; then
+            updated_config=$(echo "$updated_config" | jq '.author.name = "${{ secrets.AUTHOR_NAME }}"')
+          fi
+          
+          if [ -n "${{ secrets.AUTHOR_URL }}" ]; then
+            updated_config=$(echo "$updated_config" | jq '.author.url = "${{ secrets.AUTHOR_URL }}"')
+          fi
+          
+          if [ -n "${{ secrets.AUTHOR_AVATAR }}" ]; then
+            updated_config=$(echo "$updated_config" | jq '.author.avatar = "${{ secrets.AUTHOR_AVATAR }}"')
+          fi
+          
+          # 更新社交媒体（如果提供）
+          if [ -n "${{ secrets.TWITTER_HANDLE }}" ]; then
+            updated_config=$(echo "$updated_config" | jq '.social.twitter = "${{ secrets.TWITTER_HANDLE }}"')
+          fi
+          
+          # 写入更新后的配置
+          echo "$updated_config" > config.json
+          echo "✅ config.json已更新"
+          echo "当前配置:"
+          cat config.json | jq .
+
+      - name: 设置Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: 登录到GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 提取镜像元数据
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=raw,value=${{ inputs.tag || 'latest' }}
+            type=raw,value=build-${{ github.run_number }}
+            type=sha,prefix={{branch}}-
+
+      - name: 构建并推送Docker镜像
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            S3_REGION=${{ secrets.S3_REGION || 'us-east-1' }}
+            S3_ACCESS_KEY_ID=${{ secrets.S3_ACCESS_KEY_ID }}
+            S3_SECRET_ACCESS_KEY=${{ secrets.S3_SECRET_ACCESS_KEY }}
+            S3_BUCKET_NAME=${{ secrets.S3_BUCKET_NAME }}
+            S3_PREFIX=${{ secrets.S3_PREFIX || 'img' }}
+            S3_ENDPOINT=${{ secrets.S3_ENDPOINT }}
+            S3_CUSTOM_DOMAIN=${{ secrets.S3_CUSTOM_DOMAIN }}
+            ${{ secrets.GIT_TOKEN && format('GIT_TOKEN={0}', secrets.GIT_TOKEN) || '' }}
+            ${{ secrets.PG_CONNECTION_STRING && format('PG_CONNECTION_STRING={0}', secrets.PG_CONNECTION_STRING) || '' }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: 构建完成通知
+        run: |
+          echo "🎉 Docker镜像构建成功！"
+          echo "📦 镜像标签: ${{ steps.meta.outputs.tags }}"
+          echo "🔗 镜像地址: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:${{ inputs.tag || 'latest' }}"
+          echo ""
+          echo "🚀 使用以下命令运行容器:"
+          echo "docker run -p 3000:3000 ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:${{ inputs.tag || 'latest' }}"

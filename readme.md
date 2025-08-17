@@ -102,6 +102,50 @@ services:
       - ./.env:/app/.env
 ```
 
+### 4. 使用 GitHub Actions 自动构建（推荐）
+
+我们提供了GitHub Actions工作流，可以自动构建Docker镜像并推送到GitHub Container Registry (GHCR)。
+
+#### 配置步骤：
+
+1. **Fork 此仓库**到您的GitHub账户
+
+2. **配置 GitHub Secrets**
+   进入您的仓库 `Settings` → `Secrets and variables` → `Actions`，添加以下必需的Secrets：
+   
+   ```
+   # 基础认证信息
+   S3_ACCESS_KEY_ID=your_access_key_id
+   S3_SECRET_ACCESS_KEY=your_secret_access_key
+   
+   # 存储配置（Cloudflare R2或AWS S3）
+   S3_BUCKET_NAME=your_bucket_name
+   S3_ENDPOINT=https://your-account-id.r2.cloudflarestorage.com
+   S3_CUSTOM_DOMAIN=your-custom-domain.com
+   ```
+   
+   其他可选配置请参考 [GitHub Secrets配置说明](./github-secrets-setup.md)
+
+3. **手动触发构建**
+   - 进入仓库的 `Actions` 标签页
+   - 选择 `构建并推送Docker镜像` 工作流
+   - 点击 `Run workflow` 按钮
+   - 等待构建完成
+
+4. **使用构建的镜像**
+   ```bash
+   docker pull ghcr.io/[your-username]/pic_pigsbig:latest
+   docker run -p 3000:3000 ghcr.io/[your-username]/pic_pigsbig:latest
+   ```
+
+#### 优势：
+- ✅ 全自动化构建流程
+- ✅ 敏感信息安全管理
+- ✅ 支持多架构（amd64/arm64）
+- ✅ 构建缓存优化
+- ✅ 版本管理和标签
+
+详细配置说明请查看：[GitHub Secrets配置指南](./github-secrets-setup.md)
 
 ## 📄 许可证
 
