@@ -199,8 +199,7 @@ jobs:
             S3_CUSTOM_DOMAIN=${{ secrets.S3_CUSTOM_DOMAIN }}
             ${{ secrets.GIT_TOKEN && format('GIT_TOKEN={0}', secrets.GIT_TOKEN) || '' }}
             ${{ secrets.PG_CONNECTION_STRING && format('PG_CONNECTION_STRING={0}', secrets.PG_CONNECTION_STRING) || '' }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          no-cache: true
 
       - name: Build completion notification
         run: |
