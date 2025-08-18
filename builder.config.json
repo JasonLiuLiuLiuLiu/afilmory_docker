@@ -1,13 +1,13 @@
 {
   "repo": {
-    "enable": true,
-    "url": "https://github.com/JasonLiuLiuLiuLiu/gallery-public"
+    "enable": false,
+    "url": "https://github.com/Innei/gallery-public"
   },
   "storage": {
     "provider": "s3",
-    "bucket": "pic-impact",
+    "bucket": "your-bucket-name",
     "region": "us-east-1",
-    "prefix": "img",
-    "customDomain": "https://r2-pic-impact.pigsbig.com"
+    "prefix": "your-folder-name",
+    "customDomain": "https://your-custom-domain.com"
   }
 }
