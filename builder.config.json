@@ -8,6 +8,6 @@
     "bucket": "pic-impact",
     "region": "us-east-1",
     "prefix": "img",
-    "customDomain": "r2-pic-impact.pigsbig.com"
+    "customDomain": "https://r2-pic-impact.pigsbig.com"
   }
 }
