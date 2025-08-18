@@ -100,8 +100,14 @@ jobs:
           
           # Update repository enable status (if provided)
           if [ -n "${{ secrets.REPO_ENABLE }}" ]; then
-            updated_config=$(echo "$updated_config" | jq '.repo.enable = (${{ secrets.REPO_ENABLE }} | test("true"; "i"))')
+            updated_config=$(echo "$updated_config" | jq --arg enable "${{ secrets.REPO_ENABLE }}" '
+              .repo.enable = (
+                if ($enable | ascii_downcase) | test("^(true|yes|1)$") then true
+                else false
+                end
+              )')
           fi
+
           
           # Write updated configuration
           echo "$updated_config" > builder.config.json
