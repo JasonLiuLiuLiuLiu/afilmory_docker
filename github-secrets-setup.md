@@ -229,8 +229,13 @@ VPS_HOST_PORT=3000
 2. 进入Actions页面
 3. 选择"构建并推送Docker镜像"
 4. 点击"Run workflow"
-5. ✅ 勾选"是否部署到VPS服务器"
-6. 等待构建和部署完成
+5. 选择构建类型（可选）：
+   - **default**: 标准增量构建
+   - **force-all**: 强制重新构建所有内容
+   - **force-thumbnails**: 仅强制重新生成缩略图
+   - **force-manifest**: 仅强制重新生成清单文件
+6. ✅ 勾选"是否部署到VPS服务器"
+7. 等待构建和部署完成
 
 ## 🆘 故障排除
 

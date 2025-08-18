@@ -26,10 +26,26 @@ ARG S3_ACCESS_KEY_ID
 ARG S3_SECRET_ACCESS_KEY
 ARG GIT_TOKEN
 ARG PG_CONNECTION_STRING
+ARG BUILD_TYPE=default
 
 RUN sh ./scripts/preinstall.sh
 # Install all dependencies
 RUN pnpm install --frozen-lockfile
+
+# Build manifest based on build type
+RUN if [ "$BUILD_TYPE" = "force-all" ]; then \
+      echo "🔄 Building with force all..."; \
+      pnpm run build:manifest -- --force; \
+    elif [ "$BUILD_TYPE" = "force-thumbnails" ]; then \
+      echo "🖼️ Building with force thumbnails..."; \
+      pnpm run build:manifest -- --force-thumbnails; \
+    elif [ "$BUILD_TYPE" = "force-manifest" ]; then \
+      echo "📄 Building with force manifest..."; \
+      pnpm run build:manifest -- --force-manifest; \
+    else \
+      echo "⚡ Building with default options..."; \
+      pnpm run build:manifest; \
+    fi
 
 # Build the app.
 # The build script in the ssr package.json handles building the web app first.

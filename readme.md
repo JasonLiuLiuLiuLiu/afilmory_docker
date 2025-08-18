@@ -132,6 +132,11 @@ services:
    - 点击 `Run workflow` 按钮
    - 可选择：
      - 🏷️ Docker镜像标签（默认：latest）
+     - 🔧 构建类型：
+       - `default`: 标准增量构建
+       - `force-all`: 强制重新构建所有内容  
+       - `force-thumbnails`: 仅强制重新生成缩略图
+       - `force-manifest`: 仅强制重新生成清单文件
      - 🚀 是否部署到VPS服务器
    - 等待构建（和部署）完成
 

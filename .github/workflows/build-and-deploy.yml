@@ -9,6 +9,16 @@ on:
         required: false
         default: 'latest'
         type: string
+      build_type:
+        description: 'Build type for manifest generation'
+        required: false
+        default: 'default'
+        type: choice
+        options:
+          - default
+          - force-all
+          - force-thumbnails
+          - force-manifest
       deploy:
         description: 'Deploy to VPS server'
         required: false
@@ -190,6 +200,7 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
+            BUILD_TYPE=${{ inputs.build_type || 'default' }}
             S3_REGION=${{ secrets.S3_REGION || 'us-east-1' }}
             S3_ACCESS_KEY_ID=${{ secrets.S3_ACCESS_KEY_ID }}
             S3_SECRET_ACCESS_KEY=${{ secrets.S3_SECRET_ACCESS_KEY }}
@@ -204,6 +215,7 @@ jobs:
       - name: Build completion notification
         run: |
           echo "🎉 Docker image built successfully!"
+          echo "🔧 Build type: ${{ inputs.build_type || 'default' }}"
           echo "📦 Image tags: ${{ steps.meta.outputs.tags }}"
           echo "🔗 Image URL: ${{ env.REGISTRY }}/${{ steps.repo.outputs.owner }}/${{ env.IMAGE_NAME }}:${{ inputs.tag || 'latest' }}"
           echo ""
