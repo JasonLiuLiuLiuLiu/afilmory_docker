@@ -42,14 +42,12 @@ RUN if [ "$BUILD_TYPE" = "force-all" ]; then \
     elif [ "$BUILD_TYPE" = "force-manifest" ]; then \
       echo "📄 Building with force manifest..."; \
       pnpm run build:manifest -- --force-manifest; \
-    else \
-      echo "⚡ Building with default options..."; \
-      pnpm run build:manifest; \
     fi
 
 # Build the app.
 # The build script in the ssr package.json handles building the web app first.
-RUN pnpm --filter=@afilmory/ssr build
+RUN echo "⚡ Building SSR ..."; \
+    pnpm --filter=@afilmory/ssr build
 
 # -----------------
 # Runner stage
