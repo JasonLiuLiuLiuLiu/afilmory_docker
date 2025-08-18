@@ -74,23 +74,23 @@ jobs:
           updated_config="$current_config"
           
           # Update bucket name (if provided)
-          if [ -n "${{ secrets.STORAGE_BUCKET }}" ]; then
-            updated_config=$(echo "$updated_config" | jq '.storage.bucket = "${{ secrets.STORAGE_BUCKET }}"')
+          if [ -n "${{ secrets.S3_BUCKET_NAME }}" ]; then
+            updated_config=$(echo "$updated_config" | jq '.storage.bucket = "${{ secrets.S3_BUCKET_NAME }}"')
           fi
           
           # Update custom domain (if provided)
-          if [ -n "${{ secrets.STORAGE_CUSTOM_DOMAIN }}" ]; then
-            updated_config=$(echo "$updated_config" | jq '.storage.customDomain = "${{ secrets.STORAGE_CUSTOM_DOMAIN }}"')
+          if [ -n "${{ secrets.S3_CUSTOM_DOMAIN }}" ]; then
+            updated_config=$(echo "$updated_config" | jq '.storage.customDomain = "${{ secrets.S3_CUSTOM_DOMAIN }}"')
           fi
           
           # Update storage region (if provided)
-          if [ -n "${{ secrets.STORAGE_REGION }}" ]; then
-            updated_config=$(echo "$updated_config" | jq '.storage.region = "${{ secrets.STORAGE_REGION }}"')
+          if [ -n "${{ secrets.S3_REGION }}" ]; then
+            updated_config=$(echo "$updated_config" | jq '.storage.region = "${{ secrets.S3_REGION }}"')
           fi
           
           # Update storage prefix (if provided)
-          if [ -n "${{ secrets.STORAGE_PREFIX }}" ]; then
-            updated_config=$(echo "$updated_config" | jq '.storage.prefix = "${{ secrets.STORAGE_PREFIX }}"')
+          if [ -n "${{ secrets.S3_PREFIX }}" ]; then
+            updated_config=$(echo "$updated_config" | jq '.storage.prefix = "${{ secrets.S3_PREFIX }}"')
           fi
           
           # Update repository URL (if provided)

@@ -30,10 +30,7 @@
 | `S3_CUSTOM_DOMAIN` | 自定义域名 | `r2-pic-impact.pigsbig.com` | ✅ 必需 |
 | `S3_REGION` | 存储区域 | `us-east-1` | 🔄 可选，默认us-east-1 |
 | `S3_PREFIX` | 存储前缀 | `img` | 🔄 可选，默认img |
-| `STORAGE_BUCKET` | 存储桶名称 | `pic-impact` | 🔄 可选，会覆盖builder.config.json中的配置 |
-| `STORAGE_REGION` | 存储区域 | `us-east-1` | 🔄 可选 |
-| `STORAGE_PREFIX` | 存储前缀 | `img` | 🔄 可选 |
-| `STORAGE_CUSTOM_DOMAIN` | 自定义域名 | `r2-pic-impact.pigsbig.com` | 🔄 可选 |
+
 
 ### Git相关配置
 
