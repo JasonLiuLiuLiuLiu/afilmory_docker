@@ -17,7 +17,7 @@ FROM base AS builder
 
 RUN apk update && apk add --no-cache git perl
 
-RUN git clone https://github.com/Afilmory/Afilmory --depth 1 .
+RUN git clone https://github.com/JasonLiuLiuLiuLiu/afilmory --depth 1 .
 COPY config.json ./
 COPY builder.config.json ./
 COPY .env ./
